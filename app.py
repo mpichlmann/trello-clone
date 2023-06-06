@@ -4,6 +4,7 @@ from datetime import date
 from flask_marshmallow import Marshmallow
 import json
 from flask_bcrypt import Bcrypt
+from sqlalchemy.exc import IntegrityError
 
 app = Flask(__name__)
 
@@ -95,17 +96,20 @@ def seed_db():
 
 @app.route('/register', methods=['POST'])
 def register():
-    user_info = UserSchema().load(request.json)
-    user = User(
-        email=user_info['email'],
-        password=bcrypt.generate_password_hash(user_info['password']).decode('utf8'),
-        name=user_info['name']
-    )
-    print(user.__dict__)
+    try:
+        user_info = UserSchema().load(request.json)
+        user = User(
+            email=user_info['email'],
+            password=bcrypt.generate_password_hash(user_info['password']).decode('utf8'),
+            name=user_info['name']
+        )
+        print(user.__dict__)
 
-    db.session.add(user)
-    db.session.commit()
-    return UserSchema(exclude=['password']).dump(user), 201
+        db.session.add(user)
+        db.session.commit()
+        return UserSchema(exclude=['password']).dump(user), 201
+    except IntegrityError: 
+        return {'error': 'Email already exists'}, 409
 
 
 
