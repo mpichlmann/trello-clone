@@ -11,6 +11,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://trello_dev:spameg
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    email = db.Column(db.String, nullable=False, unique=True)
+    password = db.Column(db.String, nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
+
+class UserSchema(ma.Schema):
+    class Meta:
+        fields = ('name', 'email', 'is_admin')
+
+
 class Card(db.Model):
     __tablename__ = 'cards'
     id = db.Column(db.Integer, primary_key=True)
@@ -31,6 +44,19 @@ def create_db():
 
 @app.cli.command('seed')
 def seed_db():
+    users = [
+        User(
+            email='admin@spam.com',
+            password='spinynorman',
+            is_admin=True
+        ),
+        User(
+            name='John Cleese',
+            email='cleese@spam.com',
+            password='scratch'
+        ),
+    ]
+
     # Create an instance of the Card model in memory 
     cards = [
         Card(
@@ -55,8 +81,10 @@ def seed_db():
 
     #Truncate the card table
     db.session.query(Card).delete()
+    db.session.query(User).delete()
     #add the card to the session (transaction)
     db.session.add_all(cards)
+    db.session.add_all(users)
     # cmmit the transaction to the database
     db.session.commit()
     print('Models Seeded')
@@ -66,9 +94,9 @@ def seed_db():
 @app.route('/cards')
 def all_cards():
     # select * from cards;
-    stmt = db.select(Card).where(db.or_(Card.status != 'Done', Card.id > 2)).order_by(Card.title.desc())
+    stmt = db.select(Card).order_by(Card.title)
     cards = db.session.scalars(stmt).all()
-    return CardSchema().dumps(cards)
+    return CardSchema(many=True).dump(cards)
     
 
 @app.route('/')
