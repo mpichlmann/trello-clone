@@ -1,11 +1,18 @@
-from flask import request, Blueprint
+from flask import request, Blueprint, abort
 from sqlalchemy.exc import IntegrityError
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, get_jwt_identity
 from datetime import timedelta
 from models.user import User, UserSchema
 from init import db, bcrypt
 
 auth_bp = Blueprint('auth', __name__)
+
+def admin_required(): 
+    user_email = get_jwt_identity()
+    stmt = db.select(User).filter_by(email=user_email)
+    user = db.session.scalar(stmt)
+    if not (user and user.is_admin):
+        abort(401)
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -28,7 +35,6 @@ def register():
         return UserSchema(exclude=['password']).dump(user), 201
     except IntegrityError:
         return {'error': 'Email address already in use'}, 409
-
 
 @auth_bp.route('/login', methods=['POST'])
 def login():

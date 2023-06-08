@@ -6,13 +6,11 @@ from init import db, bcrypt
 
 cli_bp = Blueprint('db', __name__)
 
-
 @cli_bp.cli.command('create')
 def create_db():
     db.drop_all()
     db.create_all()
     print('Tables created successfully')
-
 
 @cli_bp.cli.command('seed')
 def seed_db():
