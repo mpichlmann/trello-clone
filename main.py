@@ -5,7 +5,7 @@ from blueprints.cli_bp import cli_bp
 from blueprints.auth_bp import auth_bp
 from blueprints.cards_bp import cards_bp
 
-def create_app():
+def setup():
     app = Flask(__name__)
 
     app.config['JWT_SECRET_KEY'] = environ.get('JWT_KEY')
