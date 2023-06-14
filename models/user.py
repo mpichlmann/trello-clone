@@ -12,12 +12,14 @@ class User(db.Model):
     is_admin = db.Column(db.Boolean, default=False)
 
     cards = db.relationship('Card', back_populates='user')
+    comments = db.relationship('Comment', back_populates='user')
 
 
 class UserSchema(ma.Schema):
     #tell marshmallow to use UserSchema to serialise the 'cards' field
     #here we use 'fields.list' as there are MANY cards, that a user can create
     cards = fields.List(fields.Nested('CardSchema', exclude=['user', 'id']))
+    comments = fields.List(fields.Nested('CommentSchema', exclude=['user', 'id']))
 
     class Meta:
-        fields = ('name', 'email', 'password', 'is_admin', 'cards')
+        fields = ('name', 'email', 'password', 'is_admin', 'cards', 'comments')
