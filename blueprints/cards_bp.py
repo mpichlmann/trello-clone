@@ -1,5 +1,5 @@
 
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask import Blueprint, request, abort
 from init import db
 from blueprints.auth_bp import admin_required
@@ -12,8 +12,6 @@ cards_bp = Blueprint('cards', __name__, url_prefix='/cards')
 @cards_bp.route('/')
 @jwt_required()
 def all_cards():
-    admin_required()
-    
     # select * from cards
     stmt = db.select(Card).order_by(Card.title)
     cards = db.session.scalars(stmt).all()
@@ -31,13 +29,17 @@ def one_card(card_id):
     
 #create a new card 
 @cards_bp.route('/', methods=['POST'])
+@jwt_required()
 def create_card():
+    #load the incoming POST data via the schema
     card_info = CardSchema().load(request.json)
+    #create a new card instance from the card_info
     card = Card(
         title = card_info['title'],
         description = card_info['description'],
         status = card_info['status'],
-        date_created = date.today()
+        date_created = date.today(),
+        user_id = get_jwt_identity()
     )
     db.session.add(card)
     db.session.commit()
@@ -45,7 +47,9 @@ def create_card():
 
 #update a card 
 @cards_bp.route('/<int:card_id>', methods=['PUT', 'PATCH'])
+@jwt_required()
 def update_card(card_id):
+    admin_required()
     stmt = db.select(Card).filter_by(id=card_id)
     card = db.session.scalar(stmt)
     card_info = CardSchema().load(request.json)
@@ -60,7 +64,9 @@ def update_card(card_id):
     
 #delete a card 
 @cards_bp.route('/<int:card_id>', methods=['DELETE'])
+@jwt_required()
 def delete_card(card_id):
+    admin_required()
     stmt = db.select(Card).filter_by(id=card_id)
     card = db.session.scalar(stmt)
     if card:
