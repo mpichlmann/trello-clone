@@ -66,10 +66,10 @@ def update_card(card_id):
 @cards_bp.route('/<int:card_id>', methods=['DELETE'])
 @jwt_required()
 def delete_card(card_id):
-    admin_required()
     stmt = db.select(Card).filter_by(id=card_id)
     card = db.session.scalar(stmt)
     if card:
+        admin_or_owner_required(card.user.id)
         db.session.delete(card)
         db.session.commit()
         return {}, 200
